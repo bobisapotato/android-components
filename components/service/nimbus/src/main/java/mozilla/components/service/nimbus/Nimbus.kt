@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import mozilla.components.service.glean.Glean
+import mozilla.components.service.nimbus.GleanMetrics.NimbusEvents
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
@@ -22,6 +23,8 @@ import mozilla.components.support.locale.getLocaleTag
 import org.mozilla.experiments.nimbus.AppContext
 import org.mozilla.experiments.nimbus.AvailableRandomizationUnits
 import org.mozilla.experiments.nimbus.EnrolledExperiment
+import org.mozilla.experiments.nimbus.EnrollmentChangeEvent
+import org.mozilla.experiments.nimbus.EnrollmentChangeEventType
 import org.mozilla.experiments.nimbus.ErrorException
 import org.mozilla.experiments.nimbus.NimbusClient
 import org.mozilla.experiments.nimbus.NimbusClientInterface
@@ -121,7 +124,7 @@ class Nimbus(
 
     override var globalUserParticipation: Boolean
         get() = nimbus.getGlobalUserParticipation()
-        set(active) = nimbus.setGlobalUserParticipation(active)
+        set(active) = recordExperimentTelemetryEvents(nimbus.setGlobalUserParticipation(active))
 
     init {
         // Set the name of the native library so that we use
@@ -135,9 +138,6 @@ class Nimbus(
 
         // Build Nimbus AppContext object to pass into initialize
         val experimentContext = buildExperimentContext(context)
-
-        // Build a File object to represent the data directory for Nimbus data
-        val dataDir = File(context.applicationInfo.dataDir, NIMBUS_DATA_DIR)
 
         // Initialize Nimbus
         val remoteSettingsConfig = server?.let {
@@ -175,45 +175,85 @@ class Nimbus(
     override fun updateExperiments() {
         scope.launch {
             try {
-                nimbus.updateExperiments()
-
-                // Get the experiments to record in telemetry
-                nimbus.getActiveExperiments().let {
-                    if (it.any()) {
-                        recordExperimentTelemetry(it)
-                        // The current plan is to have the nimbus-sdk updateExperiments() function
-                        // return a diff of the experiments that have been received, at which point we
-                        // can emit the appropriate telemetry events and notify observers of just the
-                        // diff
-                        notifyObservers { onUpdatesApplied(it) }
-                    }
+                nimbus.updateExperiments().also { enrollmentChangeEvents ->
+                    // Record any events in telemetry
+                    recordExperimentTelemetryEvents(enrollmentChangeEvents)
+                }
+                // Update the active experiment annotations in Glean
+                nimbus.getActiveExperiments().also { experiments ->
+                    recordExperimentTelemetry(experiments)
+                    notifyObservers { onUpdatesApplied(experiments) }
                 }
             } catch (e: ErrorException.RequestError) {
                 logger.info("Error fetching experiments from endpoint: $e")
             } catch (e: ErrorException.InvalidExperimentResponse) {
                 logger.info("Invalid experiment response: $e")
+            } catch (e: ErrorException) {
+                logger.info("Nimbus Error: $e")
             }
         }
     }
 
     override fun optOut(experimentId: String) {
-        nimbus.optOut(experimentId)
+        nimbus.optOut(experimentId).also { enrollmentChangeEvents ->
+            recordExperimentTelemetryEvents(enrollmentChangeEvents)
+        }
+
+        // Set the experiment inactive in the telemetry annotations
+        Glean.setExperimentInactive(experimentId)
     }
 
     // This function shouldn't be exposed to the public API, but is meant for testing purposes to
     // force an experiment/branch enrollment.
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     internal fun optInWithBranch(experiment: String, branch: String) {
-        nimbus.optInWithBranch(experiment, branch)
+        nimbus.optInWithBranch(experiment, branch).also { enrollmentChangeEvents ->
+            recordExperimentTelemetryEvents(enrollmentChangeEvents)
+        }
+
+        // If we were successfully enrolled in the experiment (it existed), then we can update
+        // telemetry annotation with the experiment and branch values.
+        nimbus.getExperimentBranch(experiment)?.also { branchName ->
+            Glean.setExperimentActive(experiment, branchName)
+        }
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun recordExperimentTelemetry(experiments: List<EnrolledExperiment>) {
         // Call Glean.setExperimentActive() for each active experiment.
-        experiments.forEach {
+        experiments.forEach { experiment ->
             // For now, we will just record the experiment id and the branch id. Once we can call
             // Glean from Rust, this will move to the nimbus-sdk Rust core.
-            Glean.setExperimentActive(it.slug, it.branchSlug)
+            Glean.setExperimentActive(experiment.slug, experiment.branchSlug)
+        }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun recordExperimentTelemetryEvents(enrollmentChangeEvents: List<EnrollmentChangeEvent>) {
+        enrollmentChangeEvents.forEach { event ->
+            when (event.change) {
+                EnrollmentChangeEventType.ENROLLMENT -> {
+                    NimbusEvents.enrollment.record(mapOf(
+                        NimbusEvents.enrollmentKeys.experiment to event.experimentSlug,
+                        NimbusEvents.enrollmentKeys.branch to event.branchSlug,
+                        NimbusEvents.enrollmentKeys.enrollmentId to event.enrollmentId
+                    ))
+                }
+                EnrollmentChangeEventType.DISQUALIFICATION -> {
+                    NimbusEvents.disqualification.record(mapOf(
+                        NimbusEvents.disqualificationKeys.experiment to event.experimentSlug,
+                        NimbusEvents.disqualificationKeys.branch to event.branchSlug,
+                        NimbusEvents.disqualificationKeys.enrollmentId to event.enrollmentId
+                    ))
+                }
+                EnrollmentChangeEventType.UNENROLLMENT -> {
+                    NimbusEvents.unenrollment.record(mapOf(
+                        NimbusEvents.unenrollmentKeys.experiment to event.experimentSlug,
+                        NimbusEvents.unenrollmentKeys.branch to event.branchSlug,
+                        NimbusEvents.unenrollmentKeys.enrollmentId to event.enrollmentId
+                    ))
+                }
+            }
         }
     }
 
