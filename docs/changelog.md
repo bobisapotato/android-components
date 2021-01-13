@@ -43,7 +43,7 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: Migrated this component to use `browser-state` instead of `browser-session`. It is now required to pass a `BrowserStore` instance (instead of `SessionManager`) to `AppLinksFeature`.
 
 * **service-numbus**
-  * Added a `NimbusDisabled` class to provide implementers who are not able to use Nimbus yet.
+  * Added methods to split up `updateExepriments` into more friendly methods (`setExperimentsLocally`, `fetchExperiments` and `applyPendingExperiments`).
 
 # 70.0.0
 
@@ -65,6 +65,8 @@ permalink: /changelog/
 * **browser-awesomebar**:
     * Awesomebar can now be customized for bottom toolbar using the [customizeForBottomToolbar] property
 
+* **service-numbus**
+  * Added a `NimbusDisabled` class to provide implementers who are not able to use Nimbus yet.
 # 69.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v68.0.0...v69.0.0)

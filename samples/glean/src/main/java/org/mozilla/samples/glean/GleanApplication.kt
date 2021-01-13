@@ -67,7 +67,8 @@ class GleanApplication : Application() {
         nimbus = Nimbus(this,
             NimbusServerSettings(url)
         ).also { nimbus ->
-            nimbus.updateExperiments()
+            nimbus.fetchExperiments()
+            nimbus.applyPendingExperiments()
         }
     }
 }
