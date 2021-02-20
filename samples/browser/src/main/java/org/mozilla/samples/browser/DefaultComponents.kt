@@ -26,7 +26,6 @@ import mozilla.components.browser.session.Session
 import mozilla.components.browser.session.SessionManager
 import mozilla.components.browser.session.engine.EngineMiddleware
 import mozilla.components.browser.session.storage.SessionStorage
-import mozilla.components.browser.session.undo.UndoMiddleware
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
@@ -45,6 +44,7 @@ import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.app.links.AppLinksInterceptor
 import mozilla.components.feature.app.links.AppLinksUseCases
+import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.contextmenu.ContextMenuUseCases
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
@@ -66,6 +66,8 @@ import mozilla.components.feature.search.middleware.SearchMiddleware
 import mozilla.components.feature.search.region.RegionMiddleware
 import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.session.middleware.LastAccessMiddleware
+import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.SitePermissionsStorage
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -74,15 +76,18 @@ import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.service.CrashReporterService
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
+import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.service.digitalassetlinks.local.StatementApi
 import mozilla.components.service.digitalassetlinks.local.StatementRelationChecker
 import mozilla.components.service.location.LocationService
 import org.mozilla.samples.browser.addons.AddonsActivity
+import org.mozilla.samples.browser.autofill.AutofillUnlockActivity
 import org.mozilla.samples.browser.downloads.DownloadService
 import org.mozilla.samples.browser.ext.components
 import org.mozilla.samples.browser.integration.FindInPageIntegration
 import org.mozilla.samples.browser.media.MediaSessionService
 import org.mozilla.samples.browser.request.SampleUrlEncodedRequestInterceptor
+import org.mozilla.samples.browser.storage.DummyLoginsStorage
 import java.util.concurrent.TimeUnit
 
 private const val DAY_IN_MINUTES = 24 * 60L
@@ -93,6 +98,17 @@ open class DefaultComponents(private val applicationContext: Context) {
         const val SAMPLE_BROWSER_PREFERENCES = "sample_browser_preferences"
         const val PREF_LAUNCH_EXTERNAL_APP = "sample_browser_launch_external_app"
     }
+
+    val autofillConfiguration by lazy {
+        AutofillConfiguration(
+            storage = DummyLoginsStorage(),
+            publicSuffixList = publicSuffixList,
+            unlockActivity = AutofillUnlockActivity::class.java,
+            applicationName = "Sample Browser"
+        )
+    }
+
+    val publicSuffixList by lazy { PublicSuffixList(applicationContext) }
 
     val preferences: SharedPreferences =
         applicationContext.getSharedPreferences(SAMPLE_BROWSER_PREFERENCES, Context.MODE_PRIVATE)
@@ -141,7 +157,8 @@ open class DefaultComponents(private val applicationContext: Context) {
                 LocationService.default()
             ),
             SearchMiddleware(applicationContext),
-            RecordingDevicesMiddleware(applicationContext)
+            RecordingDevicesMiddleware(applicationContext),
+            LastAccessMiddleware()
         ) + EngineMiddleware.create(engine, ::findSessionById))
     }
 

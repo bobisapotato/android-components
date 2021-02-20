@@ -128,6 +128,8 @@ _Combined components to implement feature-specific use cases._
 
 * 🔵 [**Accounts Push**](components/feature/accounts-push/README.md) - Feature of use cases for FxA Account that work with push support.
 
+* 🔴 [**Autofill**](components/feature/autofill/README.md) - A component that provides support for Android's Autofill framework.
+
 * 🔵 [**Awesomebar**](components/feature/awesomebar/README.md) - A component that connects a [concept-awesomebar](components/concept/awesomebar/README.md) implementation to a [concept-toolbar](components/concept/toolbar/README.md) implementation and provides implementations of various suggestion providers.
 
 * 🔴 [**Containers**](components/feature/containers/README.md) - A component for working with contextual identities also known as containers.
@@ -172,6 +174,8 @@ _Combined components to implement feature-specific use cases._
 
 * 🔵 [**Site Permissions**](components/feature/sitepermissions/README.md) - A feature for showing site permission request prompts.
 
+* ⚪ [**WebAuthn**](components/feature/webauthn/README.md) - A feature that provides WebAuthn functionality for supported engines.
+
 * 🔵 [**Web Notifications**](components/feature/webnotifications/README.md) - A component for displaying web notifications.
 
 * 🔵 [**WebCompat**](components/feature/webcompat/README.md) - A feature to enable website-hotfixing via the Web Compatibility System-Addon.
@@ -202,11 +206,7 @@ _Components and libraries to interact with backend services._
 
 * 🔵 [**Firefox Sync - Logins**](components/service/sync-logins/README.md) - A library for integrating with Firefox Sync - Logins.
 
-* 🔵 [**Fretboard**](components/service/fretboard/README.md) - An Android framework for segmenting users in order to run A/B tests and roll out features gradually.
-
 * 🔵 [**Glean**](components/service/glean/README.md) - A client-side telemetry SDK for collecting metrics and sending them to Mozilla's telemetry service (eventually replacing [service-telemetry](components/service/telemetry/README.md)).
-
-* 🔴 [**Experiments**](components/service/experiments/README.md) - An Android SDK for running experiments on user segments in multiple branches.
 
 * 🔵 [**Location**](components/service/location/README.md) - A library for accessing Mozilla's and other location services.
 

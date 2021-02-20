@@ -3,20 +3,92 @@ layout: page
 title: Changelog
 permalink: /changelog/
 ---
-# 72.0.0-SNAPSHOT (In Development)
+
+# 73.0.0-SNAPSHOT (In Development)
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v72.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/133?closed=1)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/134?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/.config.yml)
 
+* **All components**
+  * ⚠️Increased `targetSdkVersion` to 30 (Android R)
+
+* **browser-toolbar**
+  * 🌟 Added `BrowserToolbarBehavior#forceCollapse` to easily collapse the top/bottom toolbar.
+
+* **browser-toolbar**
+  * ⚠️ **This is a breaking change**: `BrowserToolbarBottomBehavior` is renamed to `BrowserToolbarBehavior` as it is now a common behavior for toolbars be them placed at the bottom or at the top of the screen.
+
+* **feature-session**
+  * ⚠️ **This is a breaking change**: `EngineViewBottomBehavior` is renamed to `EngineViewBrowserToolbarBehavior` as it is now the glue between `EngineView` and `BrowserToolbar` irrespective of if the toolbar is placed at the bottom oir at the top of the `EngineView`.
+
+* **feature-downloads**:
+  * 🌟 New `ShareDownloadFeature` will listen for `AddShareAction` and download, cache locally and then share internet resources.
+  * ⚠️ **This is a breaking change**: This is a breaking change with clients expected to create and register a new instance of the this new feature otherwise the "Share image" from the browser contextual menu will do nothing.
+
+* **support-ktx**
+  * 🌟 Added `Context.shareMedia` that allows to easily share a specific locally stored file through the Android share menu.
+
+* **feature-downloads**:
+  * 🚒 Bug fixed [issue #9441](https://github.com/mozilla-mobile/android-components/issues/9441) - Don't ask for redundant system files permission if not required.
+  * 🚒 Bug fixed [issue #9526](https://github.com/mozilla-mobile/android-components/issues/9526) - Downloads with generic content types use the correct file extension.
+  * 🚒 Bug fixed [issue #9553](https://github.com/mozilla-mobile/android-components/issues/9553) - Multiple files were unable to be opened after being download.
+
+* **feature-webauthn**
+  * 🆕 New component to enable support for WebAuthn specification with `WebAuthnFeature`.
+  
+* **feature-awesomebar**
+  * added `SearchEngineSuggestionProvider` that offers suggestion(s) for search engines based on user search engine list
+
+* **browser-storage-sync**
+  * Added `AutofillCreditCardsAddressesStorage` implementation of the `CreditCardsAddressesStorage` interface back by the application-services' `autofill` library. 
+
+* **concept-engine**
+  * Added `defaultSettings: Settings?` parameter to registerTabHandler to supply a default Tracking Policy when opening a new extension tab.
+  * When calling `onNewTab` in `registerTabHandler` from `GeckoWebExtension.kt` a default `TrackingProtectionPolicy.strict()` is supplied to the new `GeckoEngineSession`. This was added in to avoid WebExtension tabs without any ETP settings.
+
+* **concept-storage**
+  * Introduced `CreditCardsAddressesStorage` interface for describing credit card and address storage.
+
+* **support-base**
+  * Add `NamedThreadFactory`, a `ThreadFactory` that names its threads with the given argument.
+
+* **lib-state**
+  * Add `threadNamePrefix` parameter to `Store` to give threads created by the `Store` a specific name.
+
+* **service-glean**
+  * 🆙 Updated Glean to version 34.1.0 ([changelog](https://github.com/mozilla/glean/releases/tag/v34.1.0))
+
+# 72.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v71.0.0...v72.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/133?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v72.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v72.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v72.0.0/.config.yml)
+
+* **feature-prompts**:
+  * 🚒 Bug fixed [issue #9471](https://github.com/mozilla-mobile/android-components/issues/9471) - Confirm and alert js dialogs don't show "OK" and "Cancel" buttons when the message is too long.
+
 * **support-base**
   * ⚠️ **This is a breaking change**: Update the signature of `ActivityResultHandler.onActivityResult` to avoid conflict with internal Android APIs.
 
+* **feature-addons**
+  * 🚒 Bug fixed [issue #9484] https://github.com/mozilla-mobile/android-components/issues/9484) - Handle multiple add-ons update that require new permissions.
+
+* **feature-top-sites**
+  * ⚠️ **This is a breaking change**: Replaces `includeFrecent` with an optional `frecencyConfig` in `TopSitesConfig` and `TopSitesStorage.getTopSites` to specify the frecency threshold for the returned list of top frecent sites see [#8690](https://github.com/mozilla-mobile/android-components/issues/8690).
+
+* **service-nimbus**
+ * Upgraded nimbus-sdk to enable `getExperimentBranch()` (and friends) to be callable from the main thread.
+ * Split up `updateExperiments()` in to two methods: `fetchExperiments()` and `applyPendingExperiments()`.
+ * Exposed `setExperimentsLocally()` for testing and startup.
+
 # 71.0.0
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v71.0.0...v72.0.0)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v70.0.0...v71.0.0)
 * [Milestone](https://github.com/mozilla-mobile/android-components/milestone/132?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v71.0.0/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/v71.0.0/buildSrc/src/main/java/Gecko.kt)
@@ -126,6 +198,8 @@ permalink: /changelog/
 * **browser-awesomebar**:
     * Awesomebar can now be customized for bottom toolbar using the [customizeForBottomToolbar] property
 
+* **service-numbus**
+  * Added a `NimbusDisabled` class to provide implementers who are not able to use Nimbus yet.
 # 69.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v68.0.0...v69.0.0)
@@ -147,9 +221,6 @@ permalink: /changelog/
 
 * **support-test-libstate**
   * Added `CaptureActionsMiddleware`: A `Middleware` implementation for unit tests that want to inspect actions dispatched on a `Store`.
-
-* **browser-menu**:
-  * 🚒 Bug fixed [issue #9101](https://github.com/mozilla-mobile/android-components/issues/9101) - Fix BrowserMenu position after rotating the screen on Android <=23
 
 * **feature-sitepermissions**
   * ⚠️ **This is a breaking change**: The `SitePermissionsRules` constructor, now requires a new parameter `mediaKeySystemAccess`.
